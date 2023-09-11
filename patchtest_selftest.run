@@ -1,0 +1,24 @@
+#!/bin/bash -ex
+
+# clone repos and setup
+git clone https://git.openembedded.org/openembedded-core
+#git clone /workspace/laminar/patchtest
+git clone https://git.yoctoproject.org/patchtest
+git clone https://git.yoctoproject.org/patchtest-oe
+
+# export this directory for later use
+export PATCHTESTROOT=$(pwd)
+export PATCHTESTDIR=$PATCHTESTROOT/patchtest
+
+# set the path so the patchtest script is found
+export PATH=$PATCHTESTDIR:$PATH
+
+# get bitbake and initialize the test environment
+cd openembedded-core
+git clone https://git.openembedded.org/bitbake
+source oe-init-build-env
+bitbake-layers add-layer ../meta-selftest
+
+# run the selftests
+cd $PATCHTESTROOT/patchtest-oe/selftest
+./selftest $PATCHTESTROOT/openembedded-core
