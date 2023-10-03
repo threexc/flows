@@ -1,0 +1,51 @@
+#!/bin/bash -ex
+
+# clone repos and setup
+git clone https://git.yoctoproject.org/poky
+#git clone /workspace/laminar/patchtest
+git clone https://git.yoctoproject.org/patchtest
+
+# export this directory for later use
+PATCHTESTROOT=$(pwd)
+PATCHTESTDIR=$PATCHTESTROOT/patchtest
+PATCHTEST_SHARE="patchtest_share"
+
+# set the path so the patchtest script is found
+export PATH=$PATCHTESTDIR:$PATCHTESTDIR/scripts:/workspace/laminar/.local/bin:$PATH
+
+# make sure that the Python dependencies are installed
+pip install -r $PATCHTESTDIR/requirements.txt
+
+# initialize the test environment and add the meta-patchtest layer
+cd poky
+source oe-init-build-env
+bitbake-layers add-layer $PATCHTESTDIR/meta-patchtest
+bitbake-layers add-layer $PATCHTESTROOT/poky/meta-selftest
+
+# link the backed-up downloads and sstate-cache dirs for faster builds
+ln -s /workspace/laminar/yoctocache/downloads
+ln -s /workspace/laminar/yoctocache/sstate-cache
+
+# setup the sharedir
+patchtest-setup-sharedir --directory $PATCHTEST_SHARE
+
+# copy the series test log from the cache so that we don't repeat the tests
+cp /workspace/laminar/yoctocache/patchtest-series-test.log $PATCHTEST_SHARE/mboxes/.series_test.log
+
+# get the latest patches
+LATEST=$(get-latest-series --limit 100 --interval 60 --directory $PATCHTEST_SHARE/mboxes --tested-series $PATCHTEST_SHARE/mboxes/.series_test.log)
+
+if [[ $LATEST =~ "No new series" ]]; then
+    echo "No new patches to test. Stopping pipeline..."
+    exit 0
+fi
+
+# build the image
+bitbake core-image-patchtest
+
+# run the image
+runqemu kvm nographic qemuparams="-snapshot -fsdev local,id=test_mount,path=$PATCHTESTROOT/poky/build/$PATCHTEST_SHARE,security_model=mapped -device virtio-9p-pci,fsdev=test_mount,mount_tag=test_mount -smp 4 -m 2048"
+
+# copy the series test log back to cache with the updated info
+cp $PATCHTEST_SHARE/mboxes/.series_test.log /workspace/laminar/yoctocache/patchtest-series-test.log 
+cp $PATCHTEST_SHARE/mboxes/*.testresult $ARCHIVE
