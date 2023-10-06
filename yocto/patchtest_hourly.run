@@ -35,7 +35,7 @@ cp /workspace/laminar/yoctocache/patchtest-series-test.log $PATCHTEST_SHARE/mbox
 # get the latest patches
 LATEST=$(get-latest-series --limit 100 --interval 60 --directory $PATCHTEST_SHARE/mboxes --tested-series $PATCHTEST_SHARE/mboxes/.series_test.log)
 
-if [[ $LATEST =~ "No new series" ]]; then
+if [[ ! $LATEST =~ "Downloading" ]]; then
     echo "No new patches to test. Stopping pipeline..."
     exit 0
 fi
@@ -48,4 +48,5 @@ runqemu kvm nographic qemuparams="-snapshot -fsdev local,id=test_mount,path=$PAT
 
 # copy the series test log back to cache with the updated info
 cp $PATCHTEST_SHARE/mboxes/.series_test.log /workspace/laminar/yoctocache/patchtest-series-test.log 
+cp $PATCHTEST_SHARE/mboxes/*.patch $ARCHIVE
 cp $PATCHTEST_SHARE/mboxes/*.testresult $ARCHIVE
