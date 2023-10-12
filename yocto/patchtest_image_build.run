@@ -1,0 +1,30 @@
+#!/bin/bash -ex
+
+# clone repos and setup
+git clone -b tgamblin/patchtest https://git.yoctoproject.org/poky-contrib poky
+#git clone /workspace/laminar/patchtest
+git clone https://git.yoctoproject.org/patchtest
+
+# export this directory for later use
+PATCHTESTROOT=$(pwd)
+PATCHTESTDIR=$PATCHTESTROOT/patchtest
+
+# initialize the test environment and add the meta-patchtest layer
+cd poky
+source oe-init-build-env
+
+# link the backed-up downloads and sstate-cache dirs for faster builds
+ln -s /workspace/laminar/yoctocache/downloads
+ln -s /workspace/laminar/yoctocache/sstate-cache
+
+# add the patchtest and meta-selftest layers
+bitbake-layers add-layer $PATCHTESTDIR/meta-patchtest
+bitbake-layers add-layer $PATCHTESTROOT/poky/meta-selftest
+
+# build the image
+bitbake core-image-patchtest
+
+# copy out the image artifacts so that other pipelines can use them
+cp tmp/deploy/images/qemux86-64/bzImage /workspace/laminar/yoctocache
+cp tmp/deploy/images/qemux86-64/core-image-patchtest-qemux86-64.rootfs.ext4 /workspace/laminar/yoctocache
+cp tmp/deploy/images/qemux86-64/core-image-patchtest-qemux86-64.rootfs.qemuboot.conf /workspace/laminar/yoctocache
