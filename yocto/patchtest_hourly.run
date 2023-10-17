@@ -1,9 +1,10 @@
 #!/bin/bash -ex
 
 # clone repos and setup
-git clone -b tgamblin/patchtest https://git.yoctoproject.org/poky-contrib poky
+git clone https://git.yoctoproject.org/poky
 #git clone /workspace/laminar/patchtest
 git clone https://git.yoctoproject.org/patchtest
+git clone https://git.openembedded.org/meta-openembedded
 
 # export this directory for later use
 PATCHTESTROOT=$(pwd)
@@ -11,13 +12,15 @@ PATCHTESTDIR=$PATCHTESTROOT/patchtest
 PATCHTEST_SHARE="patchtest_share"
 
 # set the path so the patchtest script is found
-export PATH=$PATCHTESTDIR:$PATCHTESTDIR/scripts:/workspace/laminar/.local/bin:$PATH
+export PATH=/workspace/laminar/.local/bin:$PATH
 
 # initialize the test environment and add the meta-patchtest layer
 cd poky
 source oe-init-build-env
 bitbake-layers add-layer $PATCHTESTDIR/meta-patchtest
 bitbake-layers add-layer $PATCHTESTROOT/poky/meta-selftest
+bitbake-layers add-layer ../../meta-openembedded/meta-oe
+bitbake-layers add-layer ../../meta-openembedded/meta-python
 
 # link the backed-up downloads and sstate-cache dirs for faster builds
 ln -s /workspace/laminar/yoctocache/downloads
@@ -37,30 +40,10 @@ if [[ ! $LATEST =~ "Downloading" ]]; then
     exit 0
 fi
 
+bitbake core-image-patchtest
+
 # run the image
-#runqemu kvm nographic qemuparams="-snapshot -fsdev local,id=test_mount,path=$PATCHTESTROOT/poky/build/$PATCHTEST_SHARE,security_model=mapped -device virtio-9p-pci,fsdev=test_mount,mount_tag=test_mount -smp 4 -m 2048"
-qemu-system-x86_64 \
--device virtio-net-pci,netdev=net0,mac=52:54:00:12:34:02 \
--netdev tap,id=net0,ifname=tap0,script=no,downscript=no \
--object rng-random,filename=/dev/urandom,id=rng0 \
--device virtio-rng-pci,rng=rng0 \
--drive file=/workspace/laminar/yoctocache/core-image-patchtest-qemux86-64.rootfs.ext4,if=virtio,format=raw \
--usb \
--device usb-tablet \
--device usb-kbd \
--cpu IvyBridge \
--machine q35,i8042=off \
--smp 4 \
--enable-kvm \
--m 2048 \
--snapshot \
--fsdev local,id=test_mount,path=$PATCHTEST_SHARE,security_model=mapped \
--device virtio-9p-pci,fsdev=test_mount,mount_tag=test_mount \
--serial mon:stdio \
--serial null \
--nographic \
--kernel /workspace/laminar/yoctocache/bzImage \
--append 'root=/dev/vda rw  ip=192.168.7.2::192.168.7.1:255.255.255.0::eth0:off:8.8.8.8 net.ifnames=0 console=ttyS0 console=ttyS1 oprofile.timer=1 tsc=reliable no_timer_check rcupdate.rcu_expedited=1 '
+runqemu kvm nographic qemuparams="-snapshot -fsdev local,id=test_mount,path=$PATCHTESTROOT/poky/build/$PATCHTEST_SHARE,security_model=mapped -device virtio-9p-pci,fsdev=test_mount,mount_tag=test_mount -smp 4 -m 2048"
 
 # copy the series test log back to cache with the updated info
 cp $PATCHTEST_SHARE/mboxes/.series_test.log /workspace/laminar/yoctocache/patchtest-series-test.log 
