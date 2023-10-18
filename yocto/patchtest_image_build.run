@@ -25,6 +25,7 @@ bitbake-layers add-layer ../../meta-openembedded/meta-oe
 bitbake-layers add-layer ../../meta-openembedded/meta-python
 
 echo "IMAGE_ROOTFS_EXTRA_SPACE:append = \" + 16000000\"" >> conf/local.conf
+echo "PREFERRED_VERSION_python3-pylint = \"2.17.4\"" >> conf/local.conf
 
 # build the image
 bitbake core-image-patchtest
