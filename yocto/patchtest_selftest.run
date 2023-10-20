@@ -2,13 +2,11 @@
 
 # clone repos and setup
 git clone https://git.yoctoproject.org/poky
-#git clone /workspace/laminar/patchtest
-git clone https://git.yoctoproject.org/patchtest
+git clone https://git.yoctoproject.org/meta-patchtest
 git clone https://git.openembedded.org/meta-openembedded
 
 # export this directory for later use
 export PATCHTESTROOT=$(pwd)
-export PATCHTESTDIR=$PATCHTESTROOT/patchtest
 
 # set the path so the patchtest script is found
 export PATH=$PATCHTESTDIR:$PATH
@@ -17,7 +15,7 @@ export PATH=$PATCHTESTDIR:$PATH
 cd poky
 source oe-init-build-env
 bitbake-layers add-layer ../meta-selftest
-bitbake-layers add-layer ../../patchtest/meta-patchtest
+bitbake-layers add-layer ../../meta-patchtest
 bitbake-layers add-layer ../../meta-openembedded/meta-oe
 bitbake-layers add-layer ../../meta-openembedded/meta-python
 
