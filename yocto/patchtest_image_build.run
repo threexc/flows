@@ -8,20 +8,21 @@ git clone https://git.openembedded.org/meta-openembedded
 
 # export this directory for later use
 PATCHTESTROOT=$(pwd)
+CACHEDIR="/workspace/laminar/yoctocache"
 
 # initialize the test environment and add the meta-patchtest layer
 cd poky
 source oe-init-build-env
 
 # link the backed-up downloads and sstate-cache dirs for faster builds
-ln -s /workspace/laminar/yoctocache/downloads
-ln -s /workspace/laminar/yoctocache/sstate-cache
+ln -s $CACHEDIR/downloads
+ln -s $CACHEDIR/sstate-cache
 
 # add the patchtest and meta-selftest layers
 bitbake-layers add-layer $PATCHTESTROOT/meta-patchtest
 bitbake-layers add-layer $PATCHTESTROOT/poky/meta-selftest
-bitbake-layers add-layer ../../meta-openembedded/meta-oe
-bitbake-layers add-layer ../../meta-openembedded/meta-python
+bitbake-layers add-layer $PATCHTESTROOT/meta-openembedded/meta-oe
+bitbake-layers add-layer $PATCHTESTROOT/meta-openembedded/meta-python
 
 echo "IMAGE_ROOTFS_EXTRA_SPACE:append = \" + 16000000\"" >> conf/local.conf
 
@@ -29,7 +30,7 @@ echo "IMAGE_ROOTFS_EXTRA_SPACE:append = \" + 16000000\"" >> conf/local.conf
 bitbake core-image-patchtest
 
 # copy out the image artifacts so that other pipelines can use them
-cp tmp/deploy/images/qemux86-64/bzImage /workspace/laminar/yoctocache
-cp tmp/deploy/images/qemux86-64/core-image-patchtest-qemux86-64.rootfs.ext4 /workspace/laminar/yoctocache
-cp tmp/deploy/images/qemux86-64/core-image-patchtest-qemux86-64.rootfs.qemuboot.conf /workspace/laminar/yoctocache
-cp tmp/deploy/images/qemux86-64/core-image-patchtest-qemux86-64.rootfs.manifest /workspace/laminar/yoctocache
+cp tmp/deploy/images/qemux86-64/bzImage $CACHEDIR
+cp tmp/deploy/images/qemux86-64/core-image-patchtest-qemux86-64.rootfs.ext4 $CACHEDIR
+cp tmp/deploy/images/qemux86-64/core-image-patchtest-qemux86-64.rootfs.qemuboot.conf $CACHEDIR
+cp tmp/deploy/images/qemux86-64/core-image-patchtest-qemux86-64.rootfs.manifest $CACHEDIR
