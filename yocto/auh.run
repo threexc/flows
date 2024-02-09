@@ -4,6 +4,7 @@
 git clone https://git.yoctoproject.org/poky
 cd poky
 source oe-init-build-env build-auh
+echo "INHERIT += \"cve-check\"" >> conf/local.conf
 
 # link the backed-up downloads and sstate-cache dirs for faster builds
 ln -s /workspace/laminar/yoctocache/downloads
