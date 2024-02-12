@@ -1,0 +1,30 @@
+#!/bin/bash
+# Parameterized bash script for building kernels with Laminar CI. The
+# input parameters $KCONFIG_TYPE and $ARCH are passed as arguments to
+# laminarc like so:
+#
+# laminarc queue kernel_build KCONFIG_TYPE=allyesconfig ARCH=arm
+#
+# Since laminar automatically makes parameters into environment
+# variables, no check for ARCH is needed.
+
+if [[ -d "$WORKSPACE/linux" ]]; then
+    cd "$WORKSPACE/linux" && git pull
+else
+    cd "$WORKSPACE"
+    git clone https://github.com/torvalds/linux.git
+    cd linux
+fi
+
+rm .config
+
+if [[ -n "$KCONFIG_TYPE" ]]; then
+    echo "Setting up $KCONFIG_TYPE build"
+    make "$KCONFIG_TYPE"
+else
+    echo "KCONFIG_TYPE not set, defaulting to 'defconfig'"
+    make defconfig
+fi
+
+echo "Building kernel using KCONFIG_TYPE=$KCONFIG_TYPE for ARCH=$ARCH"
+make -j$(nproc)
