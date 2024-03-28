@@ -8,6 +8,10 @@
 # Since laminar automatically makes parameters into environment
 # variables, no check for ARCH is needed.
 
+#TODO: Make this script actually work with non-x86 architectures
+
+IMAGE_TYPE=
+
 if [[ -d "$WORKSPACE/linux" ]]; then
     cd "$WORKSPACE/linux" && git pull
 else
@@ -26,5 +30,38 @@ else
     make defconfig
 fi
 
-echo "Building kernel using KCONFIG_TYPE=$KCONFIG_TYPE for ARCH=$ARCH"
-make -j$(nproc)
+# For now, only interested in x86_64 and arm-based images
+if [[ "${ARCH}" == "x86_64" ]]; then
+    IMAGE_TYPE="bzImage"
+else
+    IMAGE_TYPE="uImage"
+fi
+
+echo "Building kernel using KCONFIG_TYPE=$KCONFIG_TYPE for ARCH=$ARCH. IMAGE_TYPE is '$IMAGE_TYPE'"
+make -j$(nproc) "${IMAGE_TYPE}" | tee -a build.log
+
+# get the result of make, not tee, and preserve it
+RESULT="${PIPESTATUS[0]}"
+RESULTSTR=
+
+if [[ "${RESULT}" == 0 ]]; then
+    RESULTSTR="PASS"
+else
+    RESULTSTR="FAIL"
+fi
+
+echo "RESULT: ${RESULTSTR}" >> "${ARCHIVE}"/build.summary
+echo "ARCH: ${ARCH}" >> "${ARCHIVE}"/build.summary
+echo "IMAGE_TYPE: ${IMAGE_TYPE}" >> "${ARCHIVE}"/build.summary
+echo "KCONFIG_TYPE: ${KCONFIG_TYPE}" >> "${ARCHIVE}"/build.summary
+
+cp build.log "${ARCHIVE}"/build.log
+cp .config "${ARCHIVE}"/build.config
+
+if [[ "${RESULT}" == 0 ]]; then
+    cp arch/"${ARCH}"/boot/"${IMAGE_TYPE}" "${ARCHIVE}"
+else
+    echo "Build failed, so not copying kernel image to ${ARCHIVE}"
+fi
+
+exit $RESULT
