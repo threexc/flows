@@ -13,10 +13,11 @@ export PATH=$PATCHTESTDIR:$PATH
 cd poky
 source oe-init-build-env
 bitbake-layers add-layer ../meta-selftest
+echo "BB_SERVER_TIMEOUT = \"60\"" >> conf/local.conf
 
 # run the selftests
 cd $PATCHTESTROOT/poky
-virtualenv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r meta/lib/patchtest/requirements.txt
 ./meta/lib/patchtest/selftest/selftest
