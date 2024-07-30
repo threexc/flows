@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Clean up the repo if it exists
+if [[ -d "$WORKSPACE/linux" ]]; then
+    cd "$WORKSPACE/linux" && make clean
+fi
