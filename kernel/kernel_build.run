@@ -8,14 +8,22 @@
 # Since laminar automatically makes parameters into environment
 # variables, no check for ARCH is needed.
 
-#TODO: Make this script actually work with non-x86 architectures
-
 IMAGE_TYPE=
+KCONFIG_TYPE="${KCONFIG_TYPE:-defconfig}"
+ARCH="${ARCH:-x86_64}"
 
 if [[ -d "$WORKSPACE/linux" ]]; then
     cd "$WORKSPACE/linux" && git pull
+
+    if [[ -n "$REMOTE" && -n "$BRANCH" ]]; then
+        git checkout "$REMOTE"/"$BRANCH"
+    else
+        echo "No remote/branch specified. Defaulting to master..."
+	git checkout master
+    fi
 else
     cd "$WORKSPACE"
+    echo "Cloning new copy of kernel repo..."
     git clone https://github.com/torvalds/linux.git
     cd linux
 fi
@@ -31,10 +39,10 @@ else
 fi
 
 # For now, only interested in x86_64 and arm-based images
-if [[ "${ARCH}" == "x86_64" ]]; then
-    IMAGE_TYPE="bzImage"
-else
+if [[ "${ARCH}" == "arm" || "${ARCH}" == "arm64" ]]; then
     IMAGE_TYPE="uImage"
+else
+    IMAGE_TYPE="bzImage"
 fi
 
 echo "Building kernel using KCONFIG_TYPE=$KCONFIG_TYPE for ARCH=$ARCH. IMAGE_TYPE is '$IMAGE_TYPE'"
@@ -54,6 +62,8 @@ echo "RESULT: ${RESULTSTR}" >> "${ARCHIVE}"/build.summary
 echo "ARCH: ${ARCH}" >> "${ARCHIVE}"/build.summary
 echo "IMAGE_TYPE: ${IMAGE_TYPE}" >> "${ARCHIVE}"/build.summary
 echo "KCONFIG_TYPE: ${KCONFIG_TYPE}" >> "${ARCHIVE}"/build.summary
+echo "REMOTE: ${REMOTE}" >> "${ARCHIVE}"/build.summary
+echo "BRANCH: ${BRANCH}" >> "${ARCHIVE}"/build.summary
 
 cp build.log "${ARCHIVE}"/build.log
 cp .config "${ARCHIVE}"/build.config
