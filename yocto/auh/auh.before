@@ -1,0 +1,10 @@
+#!/bin/bash -e
+
+# Make sure the poky and AUH repos are up-to-date
+cd "$WORKSPACE/poky-auh"
+git fetch origin
+git reset --hard origin/master
+
+cd "$WORKSPACE/poky-auh/build/auto-upgrade-helper"
+git fetch origin
+git reset --hard origin/master

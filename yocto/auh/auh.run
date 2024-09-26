@@ -1,0 +1,12 @@
+#!/bin/bash -ex
+
+cd "$WORKSPACE/poky-auh"
+source oe-init-build-env build
+echo "INHERIT += \"cve-check\"" >> conf/local.conf
+
+# copy the customized upgrade-helper.conf config file
+mkdir -p upgrade-helper
+cp /auto/laminar/yoctocache/upgrade-helper.conf upgrade-helper
+
+# build
+./auto-upgrade-helper/upgrade-helper.py all

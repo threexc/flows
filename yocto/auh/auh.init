@@ -1,0 +1,5 @@
+#!/bin/bash -e
+echo "Initializing workspace for poky-auh"
+git clone --depth=1 https://git.yoctoproject.org/poky poky-auh
+mkdir -p poky-auh/build
+git clone --depth=1 https://git.yoctoproject.org/auto-upgrade-helper poky-auh/build/auto-upgrade-helper
