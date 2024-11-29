@@ -1,0 +1,20 @@
+#!/bin/bash -ex
+
+# setup from local copy of poky
+source "$WORKSPACE/poky/oe-init-build-env" build-genericarm64
+
+# genericarm64 is our target architecture
+echo "MACHINE = \"genericarm64\"" >> conf/local.conf
+
+# deb is a bit more reliable than rpm
+echo "PACKAGE_CLASSES = \"package_deb\"" >> conf/local.conf
+
+# link the backed-up downloads and sstate-cache dirs for faster builds
+ln -s /auto/laminar/yoctocache/downloads
+ln -s /auto/laminar/yoctocache/sstate-cache
+
+bitbake core-image-full-cmdline
+
+# unlink the downloads and sstate-cache dirs so that there's no risk of deletion
+unlink downloads
+unlink sstate-cache

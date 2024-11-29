@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Pull and reset the repo if it exists
+if [[ -d "$WORKSPACE/poky" ]]; then
+    cd "$WORKSPACE/poky" && git fetch origin && git reset --hard origin/master
+else
+    git clone https://git.yoctoproject.org/poky "$WORKSPACE/poky"
+fi
