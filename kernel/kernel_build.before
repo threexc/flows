@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Clean up the repo if it exists
+# Clean up the repo if it exists, then update it
 if [[ -d "$WORKSPACE/linux" ]]; then
     cd "$WORKSPACE/linux" && make clean
+    git fetch ukleinek && git reset --hard ukleinek/pwm/for-next
 fi
