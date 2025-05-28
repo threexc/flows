@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash +x
 # Parameterized bash script for building kernels with Laminar CI. The
 # input parameters $KCONFIG_TYPE and $ARCH are passed as arguments to
 # laminarc like so:
@@ -9,23 +9,22 @@
 # variables, no check for ARCH is needed.
 
 IMAGE_TYPE=
+VERSION=$(curl -s https://www.kernel.org/ | grep -A1 'mainline:' | grep -oP '(?<=strong>).*(?=</strong.*)')
 KCONFIG_TYPE="${KCONFIG_TYPE:-defconfig}"
 ARCH="${ARCH:-x86_64}"
+CROSS="${CROSS:-aarch64-linux-gnu-}"
+REMOTE="${REMOTE:-origin}"
+BRANCH="${BRANCH:-v$VERSION}"
 
-if [[ -d "$WORKSPACE/linux" ]]; then
-    cd "$WORKSPACE/linux" && git pull
-
-    if [[ -n "$REMOTE" && -n "$BRANCH" ]]; then
-        git checkout "$REMOTE"/"$BRANCH"
-    else
-        echo "No remote/branch specified. Defaulting to master..."
-	git checkout master
-    fi
+# Clean up the repo if it exists, then update it
+if [[ -d "${WORKSPACE}/linux" ]]; then
+    cd "${WORKSPACE}/linux"
+    make clean
+    git fetch "${REMOTE}"
+    git checkout "${BRANCH}"
 else
-    cd "$WORKSPACE"
-    echo "Cloning new copy of kernel repo..."
-    git clone https://github.com/torvalds/linux.git
-    cd linux
+    echo "Something went wrong - no copy of the kernel repository present"
+    exit 1
 fi
 
 rm .config
@@ -38,8 +37,22 @@ else
     make defconfig
 fi
 
-echo "Building kernel using KCONFIG_TYPE=$KCONFIG_TYPE for ARCH=$ARCH."
-make -j$(nproc) | tee -a build.log
+if [[ "${ARCH}" == "arm64" ]]; then
+    CROSS="aarch64-linux-gnu-"
+elif [[ "${ARCH}" == "riscv64" ]]; then
+    CROSS="riscv64-linux-gnu-"
+else
+    CROSS=""
+fi
+
+echo "Building kernel using the following settings:"
+echo "KCONFIG_TYPE=$KCONFIG_TYPE"
+echo "ARCH=$ARCH"
+echo "CROSS=$CROSS"
+echo "REMOTE=$REMOTE"
+echo "BRANCH=$BRANCH"
+
+make CROSS_COMPILE="${CROSS}" -j$(nproc) | tee -a build.log
 
 # get the result of make, not tee, and preserve it
 RESULT="${PIPESTATUS[0]}"
@@ -61,9 +74,7 @@ cp build.log "${ARCHIVE}"/build.log
 cp .config "${ARCHIVE}"/build.config
 
 if [[ "${RESULT}" == 0 ]]; then
-    cp arch/"${ARCH}"/boot/Image "${ARCHIVE}"
+    cp arch/"${ARCH}"/boot/Image.gz "${ARCHIVE}"
 else
     echo "Build failed, so not copying kernel image to ${ARCHIVE}"
 fi
-
-exit $RESULT
