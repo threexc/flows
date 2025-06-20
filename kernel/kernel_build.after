@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# tftp the kernel image to the tftp server if and only if the build was for the
+# BeaglePlay
+
+if [[ "$KCONFIG_TYPE" == "beagleplay_defconfig" ]]; then
+    tftp 192.168.40.134 -c put "${ARCHIVE}/Image.gz" beagleplay/Image.gz
+fi
